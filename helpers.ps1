@@ -1,7 +1,7 @@
 # ====================================================
 # GetMenuStartPath
 # ====================================================
-# Grabs Menu Start location from registry
+# Grabs Menu Start location from registry.
 #
 # @return   {string}    Menu Start path
 # ====================================================
