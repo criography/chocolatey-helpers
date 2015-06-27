@@ -14,8 +14,6 @@ Function GetMenuStartPath(){
 
 
 
-
-
 # ====================================================
 # GetUninstallString
 # ====================================================
@@ -44,9 +42,12 @@ Function GetUninstallString([string]$programName){
   if( ((Get-WmiObject Win32_Processor).AddressWidth -eq 64) -and (Test-Path "$machine_key64") ) {
     $reg_locations += "$machine_key64\*"
   }
+  
+  $output = (Get-ItemProperty -Path $reg_locations | ?{ $_.DisplayName -match $programName } | select -exp "UninstallString")
+  
 
   # find and return the actual uninstaller path
-  return (Get-ItemProperty -Path $reg_locations | ?{ $_.DisplayName -match $programName }).UninstallString | select -uniq
+  return ($output | select -uniq)
 }
 
 
