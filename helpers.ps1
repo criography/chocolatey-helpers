@@ -46,7 +46,7 @@ Function GetUninstallString([string]$programName){
   }
 
   # find and return the actual uninstaller path
-  return (Get-ItemProperty -Path $reg_locations | ?{ $_.DisplayName -match $programName }).UninstallString
+  return (Get-ItemProperty -Path $reg_locations | ?{ $_.DisplayName -match $programName }).UninstallString | select -uniq
 }
 
 
