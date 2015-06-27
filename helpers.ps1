@@ -20,10 +20,12 @@ Function GetMenuStartPath(){
 # Searches Registry for the uninstall string
 #
 # @param    {string}    $programName    Full program name, as its referred to in registry
+# @param    {bool}      $trySilent      Try checking for silent uninstall string?
 # @return   {string}                    Full uninstall path (no flags)
 # ====================================================
 
-Function GetUninstallString([string]$programName){
+Function GetUninstallString([string]$programName, [bool]$trySilent){
+  $uninstallType = "UninstallString"
 
   # establish all possible locations for uninstaller to be stored
   $local_key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall'
@@ -43,11 +45,15 @@ Function GetUninstallString([string]$programName){
     $reg_locations += "$machine_key64\*"
   }
   
-  $output = (Get-ItemProperty -Path $reg_locations | ?{ $_.DisplayName -match $programName } | select -exp "UninstallString")
-  
+  if($trySilent){
+    $uninstallType = "QuietUninstallString"
+  }
 
   # find and return the actual uninstaller path
-  return ($output | select -uniq)
+  return (Get-ItemProperty -Path $reg_locations | `
+    ?{ $_.DisplayName -eq $programName }) | `
+    ?{ $_.$uninstallType -ne $null} | `
+    select -exp $uninstallType -unique
 }
 
 
