@@ -122,6 +122,7 @@ Function AutoUninstall {
           }
 
 
+
           # uninstall package
           Uninstall-ChocolateyPackage `
               -PackageName    "$programName" `
