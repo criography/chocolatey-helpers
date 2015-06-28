@@ -19,7 +19,7 @@ Function GetMenuStartPath(){
 # ====================================================
 # Searches Registry for the uninstall string
 #
-# @param    {string}    $programName    Full program name, as its referred to in registry
+# @param    {string}    $programName    Regex pattern for full program name, as its referred to in registry
 # @param    {bool}      $trySilent      Try checking for silent uninstall string?
 # @return   {string}                    Full uninstall path (no flags)
 # ====================================================
@@ -56,7 +56,7 @@ Function GetUninstallString{
 
   # find and return the actual uninstaller path
   return (Get-ItemProperty -Path $reg_locations | `
-    ?{ $_.DisplayName -eq "$programName" }) | `
+    ?{ $_.DisplayName -match "$programName" }) | `
     ?{ $_.$uninstallType -ne $null} | `
     select -exp $uninstallType -unique
 }
