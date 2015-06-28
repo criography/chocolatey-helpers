@@ -65,13 +65,21 @@ Function GetUninstallString([string]$programName, [bool]$trySilent){
 # ====================================================
 # Tries to autouninstall a package
 #
-# @param    {string}    $programName    Full program name, as its referred to in registry
-# @param    {bool}      $trySilent      Try checking for silent uninstall string?
+# @param    {string}    $programName        (required)  Full program name, as its referred to in registry
+# @param    {bool}      $trySilent          (optional)  Try checking for silent uninstall string?
+# @param    {string}    $silentArgs         (optional)  Additional silent uninstall arguments to 
+#                                                       be added to the ones detected in registry
+# @param    {string}    $ValidExitCodes     (optional)  Passing exit codes
 # @return   {void}                    
 # ====================================================
 
-Function AutoUninstall([string]$programName, [bool]$trySilent){
-
+Function AutoUninstall {
+  param(
+    [string] $programName, 
+    [string] $trySilent   = 0,
+    [string] $silentArgs  = '',
+    $validExitCodes       = @(0)
+  )
 
   try {
       $uninstallers = GetUninstallString $programName $trySilent
