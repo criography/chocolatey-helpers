@@ -69,16 +69,16 @@ Function GetUninstallString([string]$programName, [bool]$trySilent){
 # @param    {bool}      $trySilent          (optional)  Try checking for silent uninstall string?
 # @param    {string}    $silentArgs         (optional)  Additional silent uninstall arguments to 
 #                                                       be added to the ones detected in registry
-# @param    {string}    $ValidExitCodes     (optional)  Passing exit codes
+# @param    {object}    $ValidExitCodes     (optional)  Passing exit codes
 # @return   {void}                    
 # ====================================================
 
 Function AutoUninstall {
   param(
-    [string] $programName, 
-    [string] $trySilent   = 0,
-    [string] $silentArgs  = '',
-    $validExitCodes       = @(0)
+    [string]  $programName, 
+    [bool]    $trySilent      = 0,
+    [string]  $silentArgs     = '',
+              $validExitCodes = @(0)
   )
 
   try {
