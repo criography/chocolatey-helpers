@@ -33,10 +33,10 @@ Function GetUninstallString{
   $uninstallType = "UninstallString"
 
   # establish all possible locations for uninstaller to be stored
-  $local_key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall'
-  $machine_key32 = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall'
-  $machine_key64 = 'HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall'
-  $reg_locations = @()
+  $local_key      = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall'
+  $machine_key32  = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall'
+  $machine_key64  = 'HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall'
+  $reg_locations  = @()
 
   if(Test-Path "$local_key"){
     $reg_locations += "$local_key\*"
@@ -55,9 +55,12 @@ Function GetUninstallString{
   }
 
   # find and return the actual uninstaller path
-  return (Get-ItemProperty -Path $reg_locations | `
-    ?{ $_.DisplayName -match "$programName" }) | `
-    ?{ $_.$uninstallType -ne $null} | `
+  return `
+    ( `
+      Get-ItemProperty -Path $reg_locations | `
+      ?{ $_.DisplayName     -match  "$programName" } `
+    ) | `
+    ?{ $_.$uninstallType  -ne     $null} | `
     select -exp $uninstallType -unique
 }
 
