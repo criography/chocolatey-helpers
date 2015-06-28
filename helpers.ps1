@@ -24,7 +24,12 @@ Function GetMenuStartPath(){
 # @return   {string}                    Full uninstall path (no flags)
 # ====================================================
 
-Function GetUninstallString([string]$programName, [bool]$trySilent){
+Function GetUninstallString{
+  param(
+    [string]  $programName, 
+    [bool]    $trySilent = 0
+  )
+
   $uninstallType = "UninstallString"
 
   # establish all possible locations for uninstaller to be stored
@@ -116,10 +121,10 @@ Function AutoUninstall {
 
           # uninstall package
           Uninstall-ChocolateyPackage `
-              -PackageName "$packageName" `
-              -FileType $installerType `
-              -SilentArgs "$($silentArgs)" `
-              -File "$($uninstaller)" `
+              -PackageName    "$programName" `
+              -FileType       $installerType `
+              -SilentArgs     "$($silentArgs)" `
+              -File           "$($uninstaller)" `
               -ValidExitCodes $validExitCodes
 
       }
