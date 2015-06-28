@@ -51,9 +51,79 @@ Function GetUninstallString([string]$programName, [bool]$trySilent){
 
   # find and return the actual uninstaller path
   return (Get-ItemProperty -Path $reg_locations | `
-    ?{ $_.DisplayName -eq $programName }) | `
+    ?{ $_.DisplayName -eq "$programName" }) | `
     ?{ $_.$uninstallType -ne $null} | `
     select -exp $uninstallType -unique
+}
+
+
+
+
+
+# ====================================================
+# AutoUninstall
+# ====================================================
+# Tries to autouninstall a package
+#
+# @param    {string}    $programName    Full program name, as its referred to in registry
+# @param    {bool}      $trySilent      Try checking for silent uninstall string?
+# @return   {void}                    
+# ====================================================
+
+Function AutoUninstall([string]$programName, [bool]$trySilent){
+
+
+  try {
+      $uninstallers = GetUninstallString $programName $trySilent
+
+      # determine the name we're searching for in registry
+      $uninstallerRegistryQuery = "UninstallString"
+      if($trySilent -eq 1){
+          $uninstallerRegistryQuery = "QuietUninstallString"
+      }
+
+
+      #loop through all returned strings and trigger corresponding uninstaller
+      ForEach ($uninstaller in $uninstallers) {
+
+
+          # define vars for MSI
+          if($package -like "MsiExec.exe*"){
+
+              $uninstaller    = ($uninstaller -replace 'MsiExec.exe /X', '')
+              $installerType  = "msi"
+
+          # define vars for EXE
+          }else{
+
+              # if there are any flags passed, extract them, otherwise PS/Chocolatey will freak out
+              if($uninstaller -like '*.exe" /*'){
+                  $silentArgs += ($uninstaller -replace '^.*?\.exe\"\s+(.*?)$', ' $1')
+                  $uninstaller = ($uninstaller -replace '^(.*?\.exe\")\s+.*?$', ' $1')
+              }
+
+              $installerType  = "exe"
+          }
+
+
+          # uninstall package
+          Uninstall-ChocolateyPackage `
+              -PackageName "$packageName" `
+              -FileType $installerType `
+              -SilentArgs "$($silentArgs)" `
+              -File "$($uninstaller)" `
+              -ValidExitCodes $validExitCodes
+
+      }
+
+
+
+  } catch {
+    throw $_.Exception
+  }
+
+
+
 }
 
 
