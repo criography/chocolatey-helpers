@@ -116,7 +116,7 @@ Function AutoUninstall {
 
       #loop through all returned strings and trigger corresponding uninstaller
       ForEach ($uninstaller in $uninstallers) {
-          $chocoUninst    = 1  
+          $chocoUninst = 1  
 
           # define vars for default MSI
           if($uninstaller -like "MsiExec.exe /x*"){
@@ -138,7 +138,7 @@ Function AutoUninstall {
               # if there are any flags passed, extract them, otherwise PS/Chocolatey will freak out
               if($uninstaller -match '^.*?\.exe\"\s*?\/.*$'){
                   $silentArgs += ($uninstaller -replace '^.*?\.exe\"\s+(.*?)$', ' $1')
-                  $uninstaller = ($uninstaller -replace '^(.*?\.exe\")\s+.*?$', ' $1')
+                  $uninstaller = ($uninstaller -replace '^(.*?\.exe\")\s+.*?$', '$1')
               }
 
               $installerType  = "exe"
