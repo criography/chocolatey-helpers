@@ -7,7 +7,7 @@
 # ====================================================
 
 Function GetMenuStartPath(){
-	return (Get-ItemProperty -Path "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders")."Start Menu"
+  return (Get-ItemProperty -Path "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders")."Start Menu"
 }
 
 
@@ -21,13 +21,15 @@ Function GetMenuStartPath(){
 #
 # @param    {string}    $programName    Regex pattern for full program name, as its referred to in registry
 # @param    {bool}      $trySilent      Try checking for silent uninstall string?
+# @param    {bool}      $skipMsi        Should MSi be ignored (if EXE takes care of them automatically)
 # @return   {string}                    Full uninstall path (no flags)
 # ====================================================
 
 Function GetUninstallString{
   param(
     [string]  $programName, 
-    [bool]    $trySilent = 0
+    [bool]    $trySilent = 0,
+    [bool]    $skipMsi   = 0
   )
 
   $uninstallType = "UninstallString"
@@ -54,14 +56,21 @@ Function GetUninstallString{
     $uninstallType = "QuietUninstallString"
   }
 
+  $uninstallers = ( `
+                    Get-ItemProperty -Path $reg_locations | `
+                    ?{ $_.DisplayName -match "$programName" } `
+                  ) | `
+
+                  ?{ $_.$uninstallType -ne $null} | `
+
+                  select -exp $uninstallType -unique
+
+  if($skipMsi -eq 1){
+    $uninstallers = $uninstallers | ?{ $_  -notmatch "^msiexec*"} | `
+  }
+
   # find and return the actual uninstaller path
-  return `
-    ( `
-      Get-ItemProperty -Path $reg_locations | `
-      ?{ $_.DisplayName     -match  "$programName" } `
-    ) | `
-    ?{ $_.$uninstallType  -ne     $null} | `
-    select -exp $uninstallType -unique
+  return $uninstallers
 }
 
 
@@ -75,6 +84,7 @@ Function GetUninstallString{
 #
 # @param    {string}    $programName        (required)  Full program name, as its referred to in registry
 # @param    {bool}      $trySilent          (optional)  Try checking for silent uninstall string?
+# @param    {bool}      $skipMsi        Should MSi be ignored (if EXE takes care of them automatically)
 # @param    {string}    $silentArgs         (optional)  Additional silent uninstall arguments to 
 #                                                       be added to the ones detected in registry
 # @param    {object}    $ValidExitCodes     (optional)  Passing exit codes
@@ -85,12 +95,17 @@ Function AutoUninstall {
   param(
     [string]  $programName, 
     [bool]    $trySilent      = 0,
+    [bool]    $skipMsi        = 0,
     [string]  $silentArgs     = '',
               $validExitCodes = @(0)
   )
 
   try {
-      $uninstallers = GetUninstallString $programName $trySilent
+      $uninstallers = GetUninstallString `
+                        -programName  $programName `
+                        -trySilent    $trySilent `
+                        -skipMsi      $skipMsi
+
 
       # determine the name we're searching for in registry
       $uninstallerRegistryQuery = "UninstallString"
@@ -101,19 +116,27 @@ Function AutoUninstall {
 
       #loop through all returned strings and trigger corresponding uninstaller
       ForEach ($uninstaller in $uninstallers) {
+          $chocoUninst    = 1  
 
-
-          # define vars for MSI
-          if($uninstaller -match "^MsiExec.exe /x"){
+          # define vars for default MSI
+          if($uninstaller -like "MsiExec.exe /x*"){
 
               $uninstaller    = ($uninstaller -replace '^.*?\{(.*?)\}', '{$1}')
               $installerType  = "msi"
+              $silentArgs += " /qn"
+
+          # define vars for msi with /i flag
+          }elseif($uninstaller -like "MsiExec.exe /i*"){
+
+            $chocoUninst  = 0;  
+            $uninstaller  = ($uninstaller -replace '^MsiExec.exe ', '')
+            $silentArgs += " /qn"
 
           # define vars for EXE
           }else{
 
               # if there are any flags passed, extract them, otherwise PS/Chocolatey will freak out
-              if($uninstaller -like '*.exe" /*'){
+              if($uninstaller -match '^.*?\.exe\"\s*?\/.*$'){
                   $silentArgs += ($uninstaller -replace '^.*?\.exe\"\s+(.*?)$', ' $1')
                   $uninstaller = ($uninstaller -replace '^(.*?\.exe\")\s+.*?$', ' $1')
               }
@@ -122,14 +145,23 @@ Function AutoUninstall {
           }
 
 
-
+          
           # uninstall package
-          Uninstall-ChocolateyPackage `
+          if($chocoUninst -eq 1){
+
+            Uninstall-ChocolateyPackage `
               -PackageName    "$programName" `
               -FileType       $installerType `
               -SilentArgs     "$($silentArgs)" `
               -File           "$($uninstaller)" `
               -ValidExitCodes $validExitCodes
+
+          }else{
+
+            Start-ChocolateyProcessAsAdmin "$($uninstaller)" 'msiexec' -validExitCodes $validExitCodes
+
+          }
+
 
       }
 
@@ -161,7 +193,7 @@ Function GetBinRoot(){
   $path = 'C:\tools'
 
   if($env:ChocolateyBinRoot -ne $null){
-		$path = $env:ChocolateyBinRoot
+    $path = $env:ChocolateyBinRoot
   }
 
   return $path
