@@ -104,7 +104,7 @@ Function AutoUninstall {
 
 
           # define vars for MSI
-          if($uninstaller -like "MsiExec.exe*"){
+          if($uninstaller -match "^MsiExec.exe /x"){
 
               $uninstaller    = ($uninstaller -replace '^.*?\{(.*?)\}', '{$1}')
               $installerType  = "msi"
