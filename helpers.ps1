@@ -66,7 +66,7 @@ Function GetUninstallString{
                   select -exp $uninstallType -unique
 
   if($skipMsi -eq 1){
-    $uninstallers = $uninstallers | ?{ $_  -notmatch "^msiexec*"} | `
+    $uninstallers = $uninstallers | ?{ $_  -notmatch "^msiexec*"}
   }
 
   # find and return the actual uninstaller path
@@ -115,7 +115,8 @@ Function AutoUninstall {
 
 
       #loop through all returned strings and trigger corresponding uninstaller
-      ForEach ($uninstaller in $uninstallers) {
+      if($uninstallers){
+        ForEach ($uninstaller in $uninstallers) {
           $chocoUninst = 1  
 
           # define vars for default MSI
@@ -163,7 +164,9 @@ Function AutoUninstall {
           }
 
 
+        }
       }
+
 
 
 
